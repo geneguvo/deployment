@@ -412,10 +412,8 @@ sub auth_trouble_handler : method
   {
     $message .= "<p>Your certificate is a CMS VO member.</p>";
   }
-  elsif ($dn
-	 && (($dn =~ m{(.*?)(?:/CN=\d+)+$}o && exists $vocms{$1})
-	     || ($dn =~ m{(.*?)(?:(?:/CN=proxy)|(/CN=limited proxy))+$}o
-                 && exists $vocms{$1})))
+  elsif ($dn && ($dn =~ m{(.*?)(?:(?:/CN=\d+|/CN=proxy)|(/CN=limited proxy))+$}o
+                 && exists $vocms{$1}))
   {
     $message .= "<p>Your certificate is a " . ($2 ? "limited ": "")
                 . "proxy of a CMS VO member.</p>";
@@ -424,10 +422,9 @@ sub auth_trouble_handler : method
   {
     $message .= "<p>Your certificate is not registered member of the"
               . " CMS VO. You need to register at <a href='"
-              . "https://lcg-voms.cern.ch:8443/vo/cms/vomrs?"
-	      . "path=/RootNode&action=execute'>VOMS</a> after"
-	      . " which it will take up to six hours for us to"
-              . " get the information.</p>"
+              . "https://voms2.cern.ch:8443/voms/cms"
+	      . "'>VOMS</a> after which it will take up to six hours"
+              . "for us to get the information.</p>"
   }
 
   $message .= "<p>For more details please see <a href='"
@@ -883,14 +880,13 @@ sub authn_cert($$)
   {
     $method = "X509Cert";
   }
-  elsif (($dn =~ m{(.*?)(?:/CN=\d+)+$}o && exists $vocms{$1})
-	 || ($dn =~ m{(.*?)(?:/CN=proxy)+$}o && exists $vocms{$1}))
+  elsif ($dn =~ m{(.*?)(?:/CN=\d+|/CN=proxy)+$}o && exists $vocms{$1})
   {
     $dn = $1;
     $method = "X509Proxy";
   }
   elsif ($$opts{ALLOW_LIMITED_PROXY}
-         && $dn =~ m{(.*?)(?:/CN=proxy|/CN=limited proxy)+$}o
+         && $dn =~ m{(.*?)(?:/CN=\d+|/CN=proxy|/CN=limited proxy)+$}o
          && exists $vocms{$1})
   {
     $dn = $1;

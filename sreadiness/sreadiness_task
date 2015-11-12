@@ -6,7 +6,10 @@
 ##H   help                show this help
 ##H   version             get current version of the service
 ##H   run [what]          call the sreadiness scripts to update the state
+<<<<<<< HEAD
 ##H   metricscorrections  update the daily metrics corrections by fetching the latest revision from SVN
+=======
+>>>>>>> up_master
 ##H   updateweb           update the web area
 ##H   clean               clean logs that were not touched in the last week, and historical data older than 3 months
 ##H
@@ -20,9 +23,15 @@ CFGDIR=$(dirname $0)
 STATEDIR=$TOP/state/$ME
 LOGDIR=$TOP/logs/$ME
 PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/kerberos/bin
+<<<<<<< HEAD
 
 WEBDIR={WEBDIR}
 WEBURL={WEBURL}
+=======
+WEBDIR={WEBDIR}
+WEBURL={WEBURL}
+export X509_USER_PROXY=$STATEDIR/proxy/proxy.cert
+>>>>>>> up_master
 
 # Main routine, perform action requested on command line.
 case ${1:-help} in
@@ -34,26 +43,48 @@ case ${1:-help} in
       enabledlinks )
         ./EnabledLinksFromPhEDExDataSrv.py -p $STATEDIR/CommLinksReports/ \
                        -u $WEBURL > $LOGDIR/$2-$(date +%Y-%m-%d_%H-%M-%S)
+<<<<<<< HEAD
         cp style-css-links.css $STATEDIR/CommLinksReports/HTML/
+=======
+        cp css/style-css-links.css $STATEDIR/CommLinksReports/HTML/
+>>>>>>> up_master
         ;;
       insitedb )
         ./IsSiteInSiteDB.py -p $STATEDIR/SitesInSiteDB/ \
                                   > $LOGDIR/$2-$(date +%Y-%m-%d_%H-%M-%S) ;;
       sreadiness )
+<<<<<<< HEAD
         ./SiteReadiness.py  -p $STATEDIR/SiteReadiness/ -c $STATEDIR/DailyMetricsCorrections.txt \
                             -u $WEBURL -x true \
                                   > $LOGDIR/$2-$(date +%Y-%m-%d_%H-%M-%S)
         cp style-css-reports.css $STATEDIR/SiteReadiness/HTML/
+=======
+        ./SiteReadiness.py  -p $STATEDIR/SiteReadiness/ \
+                            -u $WEBURL -x true -i $STATEDIR/srrepo/input \
+                                  > $LOGDIR/$2-$(date +%Y-%m-%d_%H-%M-%S)
+        cp css/style-css-reports.css $STATEDIR/SiteReadiness/HTML/
+>>>>>>> up_master
         ;;
       usablesites )
         ./UsableSites.py    -p $STATEDIR/SiteReadinessAnalysis/ -u $WEBURL \
                                   > $LOGDIR/$2-$(date +%Y-%m-%d_%H-%M-%S) ;;
+<<<<<<< HEAD
+=======
+
+      fetchinput )
+        cd $STATEDIR
+        [ -d $STATEDIR/srrepo ] || git clone https://github.com/CMSCompOps/SiteReadiness srrepo
+        cd srrepo && git pull > /dev/null
+        ;;
+
+>>>>>>> up_master
       * )
         echo "$0 $1: unknown action '$2', please try '$0 help' or documentation." 1>&2
         exit 1 ;;
     esac
     ;;
 
+<<<<<<< HEAD
   metricscorrections )
     # Check out the latest metrics corrections
     klist -s || { echo "$0: you must have a valid afs kerberos token."; exit 1; }
@@ -64,6 +95,11 @@ case ${1:-help} in
   updateweb )
     klist -s || { echo "$0: you must have a valid afs kerberos token."; exit 1; }
     rsync -q -au --exclude='INPUTxmls' --exclude='DailyMetricsCorrections.txt' --delete $STATEDIR/ $WEBDIR/
+=======
+  updateweb )
+    klist -s || { echo "$0: you must have a valid afs kerberos token."; exit 1; }
+    rsync -q -au --exclude='INPUTxmls' --exclude='proxy' --exclude='srrepo' --delete $STATEDIR/ $WEBDIR/
+>>>>>>> up_master
     ;;
 
   clean )
@@ -72,7 +108,11 @@ case ${1:-help} in
     [ X"$FILES" = X ] || rm -f $FILES
 
     # cleans historical data older than 3 months
+<<<<<<< HEAD
     FILES=$(find $STATEDIR -type f \( -name '*' ! -name ".htaccess" \) -mtime +90)
+=======
+    FILES=$(find $STATEDIR -type d \( -path "$STATEDIR/proxy" -o -path "$STATEDIR/srrepo" \) -prune -o -type f \( -name '*' -a ! -name ".htaccess" \) -mtime +90 -print)
+>>>>>>> up_master
     [ X"$FILES" = X ] || rm -f $FILES 
     ;;
 

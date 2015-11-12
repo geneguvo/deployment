@@ -3,7 +3,7 @@ deploy_workqueue_variants="default prod preprod dev"
 
 deploy_workqueue_deps()
 {
-  deploy couchdb
+  deploy $stage couchdb
 }
 
 deploy_workqueue_prep()
@@ -22,7 +22,7 @@ deploy_workqueue_sw()
     note "WARNING: replace certificates in $project_auth with real ones"
   else :; fi
 
-  cp -p $project_config/GlobalWorkQueueConfig-${variant}.py $project_config/GlobalWorkQueueConfig.py
+  cp -p $root/$cfgversion/config/$project/{GlobalWorkQueueConfig-${variant}.py,GlobalWorkQueueConfig.py}
 }
 
 deploy_workqueue_post()
@@ -32,28 +32,15 @@ deploy_workqueue_post()
   $nogroups || cmd="sudo -H -u _workqueue bashs -l -c \"${cmd}\""
   eval $cmd
 
-  # Tell couchdb to push workqueue apps on the next restart
-  local manage=$root/current/config/workqueue/workqueue_task
-  local couchdb_config=$root/current/config/couchdb
-  local couchdb_state=$root/state/couchdb
-  local couch_url="http://localhost:5984"
-
-  for area in stagingarea replication; do
-    rm -f $couchdb_state/$area/workqueue
-    touch $couchdb_state/$area/workqueue
-  done
-
-  # push app
-  echo "$project_config/workqueue_task pushcouchapp $couch_url" \
-      >> $couchdb_state/stagingarea/workqueue
-
-  for db in workqueue workqueue_inbox; do
-    # clean views on startup
-    echo "$couchdb_config/manage cleanviews $db 'I did read documentation'" \
-      >> $couchdb_state/stagingarea/workqueue
+  # Tell couch to push workqueue apps on the next restart
+  for couch in couchdb:5984; do
+    echo "$project_config/workqueue_task pushcouchapp http://localhost:${couch##*:}" \
+      > $root/state/${couch%%:*}/stagingarea/workqueue
   done
 
   # Setup workqueue cronjobs
+  local manage=$project_config/workqueue_task
+
   local cmd="$manage reqmgr_sync"
   $nogroups || cmd="sudo -H -u _workqueue bashs -l -c \"${cmd}\""
   local req_sync="5-45/20 * * * * $cmd"
@@ -67,13 +54,13 @@ deploy_workqueue_post()
   local housekeep="15-55/20 * * * * $cmd"
 
   (mkcrontab;
-   case $host in
-     vocms34 | vocms13[2689] | vocms16[13])
-       ;;
-     * )
+   case $variant:$host in
+     prod:vocms0140 | preprod:vocms0131 | dev:vocms0127 | dev:vocms0126 | default:* )
        echo "${req_sync}"
        echo "${locations}"
        echo "${housekeep}"
+       ;;
+     * )
        ;;
    esac) | crontab -
 }

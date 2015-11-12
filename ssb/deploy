@@ -2,7 +2,11 @@
 
 deploy_ssb_deps()
 {
+<<<<<<< HEAD
   deploy admin
+=======
+  deploy $stage admin
+>>>>>>> up_master
 }
 
 deploy_ssb_prep()
@@ -12,7 +16,11 @@ deploy_ssb_prep()
 }
 
 outdir=/afs/cern.ch/cms/LCG/SiteComm
+<<<<<<< HEAD
 ssbver=5ab0e7063b44c47725e4b31c84bf9de9570a6c87 # FIX: should use a tag
+=======
+ssbver=500571b1f497226a1138d8a3ec05d8d0d0e8c72f # FIX: should use a tag
+>>>>>>> up_master
 
 deploy_ssb_sw()
 {
@@ -20,6 +28,7 @@ deploy_ssb_sw()
 
   # Drop here only the needed scripts
   klist -s
+<<<<<<< HEAD
   cd $root/current/apps
   git clone -n https://:@git.cern.ch/kerberos/sitecomm --depth 1 $project
   cd $project
@@ -29,6 +38,17 @@ deploy_ssb_sw()
   # Relocations
   perl -p -i -e "s,{OUTDIR},$outdir,g; \
                  s,{VER},$ssbver,g;" $project_config/ssb_task
+=======
+  cd $root/$cfgversion/apps.$glabel
+  git clone https://:@git.cern.ch/kerberos/sitecomm $project
+  cd $project
+  git reset --hard $ssbver
+  mv SSBScripts/{jr_successrate,site_avail_sum,cms-storage-info}.pl ./ && rm -rf .git SSBScripts SpaceMonitor DDT
+
+  # Relocations
+  perl -p -i -e "s,{OUTDIR},$outdir,g; \
+                 s,{VER},$ssbver,g;" $root/$cfgversion/config/$project/ssb_task
+>>>>>>> up_master
 }
 
 deploy_ssb_post()
@@ -39,8 +59,13 @@ deploy_ssb_post()
   ) | acrontab
 
   (mkcrontab
+<<<<<<< HEAD
    echo "55 0 * * * $project_config/ssb_task siteavail"
    echo "55 0 * * * $project_config/ssb_task hctest 24"
+=======
+   echo "10 2 * * * $project_config/ssb_task siteavail"
+   echo "55 1 * * * $project_config/ssb_task hctest 24"
+>>>>>>> up_master
    echo "55 * * * * $project_config/ssb_task hctest 6"
    echo "0 * * * * $project_config/ssb_task storage"
   ) | crontab -

@@ -4,9 +4,9 @@ deploy_dbs_variants="default prod preprod dev"
 
 deploy_dbs_deps()
 {
-  deploy admin
-  deploy backend
-  deploy wmcore-auth
+  deploy $stage admin
+  deploy $stage backend
+  deploy $stage wmcore-auth
 }
 
 deploy_dbs_prep()
@@ -18,21 +18,34 @@ deploy_dbs_prep()
 deploy_dbs_sw()
 {
   deploy_pkg -a dbs/DBSSecrets.py -l dbs comp cms+dbs3
-  cp -p $project_config/DBS-${variant}.py $project_config/DBS.py
+  perl -p -i -e "s,\@\@JSONURL\@\@,https://github.com/dmwm/DBS/raw/master/view_instances.json,g" $root/$cfgversion/config/$project/manage
+  perl -p -i -e "s,\@\@VARIANT\@\@,$variant,g" $root/$cfgversion/config/$project/DBS.py
 }
 
 deploy_dbs_post()
 {
-  case $host in vocms13[89] | vocms140 ) disable ;; * ) enable ;; esac
-  (mkcrontab; sysboot) | crontab -
+  case $host in
+    vocms013[89] | vocms0140 | vocms0307 | vocms0318 )
+      disable
+      ;;
+    * )
+      enable
+      local cmd="$project_config/manage setinstances 'I did read documentation'"
+      $nogroups || cmd="sudo -H -u _dbs bashs -l -c \"${cmd}\" 2> /dev/null"
+      (mkcrontab; sysboot; echo "*/30 * * * * $cmd") | crontab -
+      eval $cmd # Force fetching of view instances during deployment
+      ;;
+  esac
 }
 
 deploy_dbs_auth()
 {
-  echo "db = {'connectUrl' : {"
-  echo "      'reader' : 'oracle://reader:secret@instance',"
-  echo "      'writer' : 'oracle://writer:secret@instance'"
-  echo "       },"
-  echo "      'databaseOwner' : 'owner'"
-  echo "     }"
+  for i in dbs3_p1_i2 dbs3_l_i2; do
+    echo "$i = {'connectUrl' : {"
+    echo "      'reader' : 'oracle://reader:secret@instance',"
+    echo "      'writer' : 'oracle://writer:secret@instance'"
+    echo "       },"
+    echo "      'databaseOwner' : 'owner'"
+    echo "     }"
+  done
 }
